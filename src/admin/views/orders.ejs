@@ -1,0 +1,87 @@
+<div class="stats-grid">
+  <div class="stat-card"><div class="stat-head"><span class="stat-icon">📦</span><span class="stat-label">Total Orders</span></div><strong class="stat-value"><%= stats.total %></strong></div>
+  <div class="stat-card"><div class="stat-head"><span class="stat-icon">🕓</span><span class="stat-label">Pending</span></div><strong class="stat-value"><%= stats.pending %></strong></div>
+  <div class="stat-card"><div class="stat-head"><span class="stat-icon">🚚</span><span class="stat-label">Ongoing</span></div><strong class="stat-value"><%= stats.ongoing %></strong></div>
+  <div class="stat-card"><div class="stat-head"><span class="stat-icon">✅</span><span class="stat-label">Completed</span></div><strong class="stat-value"><%= stats.completed %></strong></div>
+  <div class="stat-card"><div class="stat-head"><span class="stat-icon">❌</span><span class="stat-label">Cancelled</span></div><strong class="stat-value"><%= stats.cancelled %></strong></div>
+</div>
+
+<form class="toolbar" method="get" action="/admin/orders">
+  <input class="filter-input" type="text" name="search" placeholder="Search Order ID" value="<%= filters.search %>" />
+  <select name="status" class="filter-input">
+    <option value="all" <%= filters.status === "all" ? "selected" : "" %>>All Status</option>
+    <option value="pending" <%= filters.status === "pending" ? "selected" : "" %>>Pending</option>
+    <option value="assigned" <%= filters.status === "assigned" ? "selected" : "" %>>Assigned</option>
+    <option value="ongoing" <%= filters.status === "ongoing" ? "selected" : "" %>>Ongoing</option>
+    <option value="completed" <%= filters.status === "completed" ? "selected" : "" %>>Completed</option>
+    <option value="cancelled" <%= filters.status === "cancelled" ? "selected" : "" %>>Cancelled</option>
+  </select>
+  <input class="filter-input" type="date" name="date" value="<%= filters.date %>" />
+  <select name="payment" class="filter-input">
+    <option value="all" <%= filters.payment === "all" ? "selected" : "" %>>All Payment</option>
+    <option value="paid" <%= filters.payment === "paid" ? "selected" : "" %>>Paid</option>
+    <option value="pending" <%= filters.payment === "pending" ? "selected" : "" %>>Pending</option>
+  </select>
+  <button type="submit" class="btn btn-gold">Apply</button>
+</form>
+
+<div class="chart-card">
+  <div class="chart-skeleton"></div>
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Order ID</th>
+          <th>User Name</th>
+          <th>Bike ID</th>
+          <th>Pickup</th>
+          <th>Drop</th>
+          <th>Assigned Partner</th>
+          <th>Status</th>
+          <th>Payment</th>
+          <th>Amount</th>
+          <th>Date & Time</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (!orders.length) { %>
+        <tr><td colspan="11" class="empty">No orders found</td></tr>
+        <% } %>
+        <% orders.forEach((order) => { %>
+        <tr>
+          <td><%= order.id %></td>
+          <td><%= order.userName %></td>
+          <td><%= order.bikeId %></td>
+          <td><%= order.pickup_location %></td>
+          <td><%= order.drop_location %></td>
+          <td><%= order.assignedPartner %></td>
+          <td>
+            <span class="badge <%= order.status === 'completed' ? 'success' : order.status === 'cancelled' ? 'danger' : order.status === 'ongoing' ? 'warning' : '' %>">
+              <%= order.status %>
+            </span>
+          </td>
+          <td><span class="badge <%= String(order.paymentStatus).toLowerCase() === 'paid' ? 'success' : 'warning' %>"><%= order.paymentStatus %></span></td>
+          <td class="revenue-positive">₹<%= Number(order.amount || 0).toFixed(2) %></td>
+          <td><%= String(order.createdAt).replace("T", " ").slice(0, 16) %></td>
+          <td class="actions">
+            <a class="btn btn-ghost" href="/admin/orders/<%= order.id %>">View Details</a>
+            <form class="ajax-form inline-form" data-url="/admin/orders/<%= order.id %>/assign">
+              <select name="partnerId">
+                <option value="">Assign Delivery</option>
+                <% partners.forEach((partner) => { %>
+                <option value="<%= partner.id %>"><%= partner.name %></option>
+                <% }) %>
+              </select>
+              <button type="submit" class="btn btn-gold">Assign</button>
+            </form>
+            <button class="btn btn-ghost admin-action" data-url="/admin/orders/<%= order.id %>/ongoing" data-method="POST">Mark Ongoing</button>
+            <button class="btn btn-gold admin-action" data-url="/admin/orders/<%= order.id %>/complete" data-method="POST">Mark Completed</button>
+            <button class="btn btn-danger admin-action" data-url="/admin/orders/<%= order.id %>/reject" data-method="POST">Cancel</button>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
