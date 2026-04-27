@@ -1,0 +1,96 @@
+<style>
+  .kyc-shell { animation: fadeInUp .35s ease; }
+  .kyc-head { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; padding-bottom:12px; border-bottom:1px solid #e5e7eb; }
+  .kyc-head h2 { margin:0; font-size:24px; font-weight:800; color:#111827; }
+  .kyc-head p { margin:4px 0 0; font-size:13px; color:#6b7280; }
+  .premium-stats { display:grid; grid-template-columns:repeat(4,minmax(160px,1fr)); gap:14px; margin-bottom:14px; }
+  .premium-stat { border-radius:16px; padding:16px; background:linear-gradient(180deg,#fff,#f8fafc); border:1px solid #e5e7eb; box-shadow:0 8px 20px rgba(2,6,23,.06); }
+  .premium-stat .top { display:flex; gap:8px; color:#64748b; font-size:13px; }
+  .premium-stat .val { margin-top:8px; font-size:30px; font-weight:800; color:#111827; }
+  .kyc-filter { display:flex; gap:10px; align-items:center; margin-bottom:14px; flex-wrap:wrap; }
+  .kyc-select { border:1px solid #e5e7eb; border-radius:12px; padding:9px 11px; background:#fff; }
+  .kyc-apply { border:0; border-radius:999px; padding:10px 16px; font-weight:700; background:#111827; color:#fff; cursor:pointer; }
+  .premium-table-wrap { border:1px solid #e5e7eb; border-radius:16px; overflow:hidden; box-shadow:0 8px 22px rgba(2,6,23,.06); background:#fff; }
+  .premium-table { width:100%; border-collapse:collapse; }
+  .premium-table thead tr { background:#f8fafc; }
+  .premium-table th, .premium-table td { padding:13px 14px; border-bottom:1px solid #eef2f7; text-align:left; vertical-align:top; }
+  .status-pill { border-radius:999px; padding:4px 10px; font-size:12px; font-weight:700; border:1px solid; display:inline-block; }
+  .status-pending { background:#fffbeb; color:#a16207; border-color:#fde68a; }
+  .status-verified { background:#f0fdf4; color:#15803d; border-color:#bbf7d0; }
+  .status-rejected { background:#fef2f2; color:#b91c1c; border-color:#fecaca; }
+  .sub-note { margin-top:6px; font-size:12px; color:#6b7280; }
+  .sub-note.reject { color:#b91c1c; font-weight:600; }
+  .action-row { display:flex; gap:8px; flex-wrap:wrap; }
+  .btn-doc { border:1px solid #d1d5db; background:#fff; color:#374151; border-radius:10px; padding:7px 10px; cursor:pointer; text-decoration:none; }
+  .btn-approve { border:0; background:linear-gradient(135deg,#22c55e,#16a34a); color:#fff; border-radius:10px; padding:7px 10px; cursor:pointer; }
+  .btn-reject { border:1px solid #fecaca; background:#fef2f2; color:#b91c1c; border-radius:10px; padding:7px 10px; cursor:pointer; }
+  .empty-state { padding:36px 16px; text-align:center; color:#6b7280; }
+  @keyframes fadeInUp { from {opacity:0; transform:translateY(6px);} to {opacity:1; transform:translateY(0);} }
+</style>
+
+<div class="kyc-shell">
+  <div class="kyc-head">
+    <div>
+      <h2>KYC Documents</h2>
+      <p>Electricity bill verification requests from users.</p>
+    </div>
+  </div>
+
+  <div class="premium-stats">
+    <div class="premium-stat"><div class="top"><span>📊</span><span>Total</span></div><div class="val"><%= stats.total %></div></div>
+    <div class="premium-stat"><div class="top"><span>🟡</span><span>Under Review</span></div><div class="val"><%= stats.pending %></div></div>
+    <div class="premium-stat"><div class="top"><span>🟢</span><span>Verified</span></div><div class="val"><%= stats.verified %></div></div>
+    <div class="premium-stat"><div class="top"><span>🔴</span><span>Rejected</span></div><div class="val"><%= stats.rejected %></div></div>
+  </div>
+
+  <form class="kyc-filter" method="get" action="/admin/kyc-documents">
+    <select name="status" class="kyc-select">
+      <option value="all" <%= filter === "all" ? "selected" : "" %>>All</option>
+      <option value="pending" <%= filter === "pending" ? "selected" : "" %>>Pending</option>
+      <option value="verified" <%= filter === "verified" ? "selected" : "" %>>Verified</option>
+      <option value="rejected" <%= filter === "rejected" ? "selected" : "" %>>Rejected</option>
+    </select>
+    <button type="submit" class="kyc-apply">Apply</button>
+  </form>
+
+  <div class="premium-table-wrap">
+    <table class="premium-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Number</th>
+          <th>Board</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (!documents.length) { %>
+        <tr><td colspan="5"><div class="empty-state"><strong>No KYC documents found</strong></div></td></tr>
+        <% } %>
+        <% documents.forEach((item) => { %>
+        <tr>
+          <td><strong><%= item.consumer_name || "-" %></strong></td>
+          <td><%= item.consumer_number || "-" %></td>
+          <td><%= item.board_name || "-" %></td>
+          <td>
+            <span class="status-pill <%= item.status === 'verified' ? 'status-verified' : item.status === 'rejected' ? 'status-rejected' : 'status-pending' %>">
+              <%= item.status === "pending" ? "UNDER REVIEW" : (item.status || "pending").toUpperCase() %>
+            </span>
+            <% if (item.status === "rejected" && item.reason) { %>
+              <div class="sub-note reject">Reason: <%= item.reason %></div>
+            <% } %>
+          </td>
+          <td>
+            <div class="action-row">
+              <a class="btn-doc" href="<%= item.file_url || '#' %>" target="_blank">👁 View Document</a>
+              <button type="button" class="btn-approve kyc-status-btn" data-id="<%= item.id %>" data-status="verified">✅ Approve</button>
+              <button type="button" class="btn-reject kyc-status-btn" data-id="<%= item.id %>" data-status="rejected">⛔ Reject</button>
+            </div>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
