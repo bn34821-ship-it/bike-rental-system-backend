@@ -1,0 +1,8 @@
+# Set Root Directory to this backend folder in Railway if deploying from a monorepo.
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "npm run start"
+healthcheckPath = "/"
+healthcheckTimeout = 120
