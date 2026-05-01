@@ -1,0 +1,8 @@
+# Railway: set Root Directory to this folder ("bike rental system backend") if deploying from monorepo.
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "node src/server.js"
+healthcheckPath = "/health"
+healthcheckTimeout = 300
